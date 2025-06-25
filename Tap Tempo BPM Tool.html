@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Free Tap Tempo BPM Tool</title>
+	<!-- Tailwind CSS CDN -->
+	<script src="https://cdn.tailwindcss.com"></script>
+	<style>
+		body {
+			font-family: "Inter", sans-serif;
+			background-color: #f0f4f8; /* Light gray background */
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+			margin: 0;
+			padding: 20px;
+			box-sizing: border-box;
+		}
+		.container {
+			background-color: #ffffff; /* White card background */
+			border-radius: 1rem; /* Rounded corners */
+			box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+			padding: 2.5rem;
+			max-width: 400px;
+			width: 100%;
+			text-align: center;
+			border: 1px solid #e2e8f0; /* Light border */
+		}
+		.tap-button {
+			transition: transform 0.1s ease-out;
+		}
+		.tap-button:active {
+			transform: scale(0.98);
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1 class="text-3xl font-bold text-gray-800 mb-6">Tap Tempo</h1>
+
+		<div class="mb-8">
+			<p class="text-gray-600 text-lg mb-2">BPM:</p>
+			<p id="bpmDisplay" class="text-6xl font-extrabold text-[#febd0b]">0</p>
+		</div>
+
+		<div class="mb-8">
+			<p class="text-gray-600 text-lg mb-2">Taps:</p>
+			<p id="tapCountDisplay" class="text-4xl font-bold text-gray-700">0</p>
+		</div>
+
+		<button id="tapButton" class="tap-button w-full px-6 py-4 bg-[#febd0b] text-white font-semibold text-2xl rounded-xl shadow-md hover:bg-[#e6a80a] focus:outline-none focus:ring-4 focus:ring-[#fcd34d] focus:ring-opacity-75 active:bg-[#cc9409] mb-4">
+			TAP HERE
+		</button>
+
+		<button id="resetButton" class="w-full px-6 py-3 bg-red-500 text-white font-semibold text-lg rounded-xl shadow-md hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-opacity-75 active:bg-red-700">
+			Reset
+		</button>
+	</div>
+
+	<script>
+		// Get references to DOM elements
+		const tapButton = document.getElementById('tapButton');
+		const resetButton = document.getElementById('resetButton');
+		const bpmDisplay = document.getElementById('bpmDisplay');
+		const tapCountDisplay = document.getElementById('tapCountDisplay');
+
+		// Initialize variables for tempo calculation
+		let tapTimes = []; // Stores timestamps of each tap
+		const maxTapIntervals = 4; // Number of recent intervals to average for BPM
+		let tapCount = 0; // Total number of taps
+
+		/**
+		 * Calculates the BPM based on the last few tap intervals.
+		 * @returns {number} The calculated BPM, or 0 if not enough taps.
+		 */
+		function calculateBPM() {
+			// Need at least two taps to calculate an interval
+			if (tapTimes.length < 2) {
+				return 0;
+			}
+
+			// Get the most recent intervals
+			const recentIntervals = [];
+			for (let i = Math.max(0, tapTimes.length - maxTapIntervals - 1); i < tapTimes.length - 1; i++) {
+				recentIntervals.push(tapTimes[i + 1] - tapTimes[i]);
+			}
+
+			// Calculate the average interval in milliseconds
+			const sumIntervals = recentIntervals.reduce((sum, current) => sum + current, 0);
+			const averageInterval = sumIntervals / recentIntervals.length;
+
+			// Convert average interval (ms) to BPM
+			// (60 seconds / 1 minute) * (1000 ms / 1 second) / averageInterval (ms)
+			const bpm = 60000 / averageInterval;
+			return Math.round(bpm); // Round to nearest whole number
+		}
+
+		/**
+		 * Handles the tap button click event.
+		 */
+		function handleTap() {
+			const currentTime = performance.now(); // High-resolution time
+
+			// If it's the very first tap or a significant pause, reset the tap sequence
+			// A pause of more than 2 seconds (2000 ms) will reset the sequence
+			if (tapTimes.length > 0 && (currentTime - tapTimes[tapTimes.length - 1]) > 2000) {
+				resetTempo();
+				tapTimes.push(currentTime); // Add the current tap as the new first tap
+			} else {
+				tapTimes.push(currentTime);
+			}
+
+			tapCount++;
+			tapCountDisplay.textContent = tapCount;
+
+			// Trim tapTimes array to keep only relevant history for averaging
+			while (tapTimes.length > maxTapIntervals + 1) {
+				tapTimes.shift(); // Remove the oldest tap
+			}
+
+			// Update BPM display
+			if (tapCount >= 2) { // Need at least two taps to show a meaningful BPM
+				bpmDisplay.textContent = calculateBPM();
+			} else {
+				bpmDisplay.textContent = 0; // Display 0 until enough taps for calculation
+			}
+		}
+
+		/**
+		 * Resets all tempo calculation variables and updates the display.
+		 */
+		function resetTempo() {
+			tapTimes = [];
+			tapCount = 0;
+			bpmDisplay.textContent = 0;
+			tapCountDisplay.textContent = 0;
+		}
+
+		// Add event listeners to buttons
+		tapButton.addEventListener('click', handleTap);
+		resetButton.addEventListener('click', resetTempo);
+
+		// Optional: Add keyboard support for tapping (e.g., spacebar)
+		document.addEventListener('keydown', (event) => {
+			if (event.code === 'Space') {
+				event.preventDefault(); // Prevent scrolling on spacebar press
+				handleTap();
+			} else if (event.code === 'Escape' || event.code === 'Backspace') {
+				resetTempo();
+			}
+		});
+	</script>
+</body>
+</html>
