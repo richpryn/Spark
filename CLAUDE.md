@@ -10,3 +10,4 @@ At the start of every session: read this file and the shared agent rules (Agent 
 
 ## Rules
 - Site Jobs: when you finish work that leaves something for Richard to do, or completes a job, update the Site Jobs page (https://claude.ai/artifact/9cukbteXbK5sJbHyxGHPri) with ArtifactData in the `tasks` collection (site `all`, siteName `All sites`): add new jobs with urgency and importance (1–5) and score = urgency × importance, tick done ones, and never delete or untick.
+- `.claude/settings.json` lets the weekly dispatcher session (which uses this repo as its base) start and message the scheduled site-run sessions without being blocked (Richard, 24 Nov 2026). Don't remove it or add other permissions without Richard's yes.
